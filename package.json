@@ -1,0 +1,1 @@
+{"name":"sleephq-clone","private":true,"packageManager":"pnpm@9.15.4","scripts":{"build":"turbo build","dev":"turbo dev","lint":"turbo lint","test":"turbo test","format":"prettier --write .","typecheck":"turbo typecheck"},"devDependencies":{"@eslint/js":"^9.18.0","prettier":"^3.4.2","turbo":"^2.3.3","typescript":"^5.7.3","wrangler":"^4.0.0"}}

@@ -1,0 +1,15 @@
+name = "sleephq-clone-api"
+main = "src/index.ts"
+compatibility_date = "2026-07-29"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "sleephq_clone"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "SLEEP_UPLOADS"
+bucket_name = "sleephq-clone-uploads"
+preview_bucket_name = "sleephq-clone-uploads-preview"
