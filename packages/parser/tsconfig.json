@@ -1,0 +1,1 @@
+{"extends":"@sleephq-clone/typescript-config/base.json","compilerOptions":{"noEmit":true},"include":["src"]}

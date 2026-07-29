@@ -1,9 +1,19 @@
-import { HardDrive, Moon, UploadCloud } from "lucide-react";
+import { Activity, HardDrive, Moon, UploadCloud } from "lucide-react";
 import { useState } from "react";
+import { EventTimeline } from "@/components/dashboard/EventTimeline";
+import { SignalChart } from "@/components/dashboard/SignalChart";
+import { SummaryCards } from "@/components/dashboard/SummaryCards";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 
 type ScanFile = { file: File; path: string };
+
+function demoWave(points: number, frequency: number, baseline: number) {
+  return Array.from({ length: points }, (_, index) => ({
+    t: index * 30,
+    v: baseline + Math.sin(index * frequency) * (baseline > 1 ? 1.8 : 0.08) + Math.cos(index * frequency * 0.37) * 0.3,
+  }));
+}
 
 async function scanDirectory(dir: FileSystemDirectoryHandle, prefix = ""): Promise<ScanFile[]> {
   const files: ScanFile[] = [];
@@ -95,13 +105,43 @@ export function Dashboard() {
 
         <section className="flex-1 space-y-6">
           <header className="rounded-2xl border border-border bg-background/70 p-8">
-            <p className="text-sm uppercase tracking-widest text-primary">Phase 1</p>
-            <h1 className="mt-2 text-4xl font-bold">CPAP data import dashboard</h1>
+            <p className="text-sm uppercase tracking-widest text-primary">Phase 3</p>
+            <h1 className="mt-2 text-4xl font-bold">Sleep therapy dashboard</h1>
             <p className="mt-3 max-w-2xl text-muted-foreground">
-              Select an SD card directory, scan every nested file in-browser, and stream uploads to
-              Cloudflare R2 while metadata is stored in D1.
+              Import SD cards, decode EDF waveforms, cache statistics, and review SleepHQ-style
+              timelines with synchronized pressure, leak, flow, ventilation, respiratory-rate,
+              snore, and flow-limitation charts.
             </p>
           </header>
+
+
+          <SummaryCards
+            stats={[
+              { label: "Usage", value: "7.6h" },
+              { label: "AHI", value: "1.8" },
+              { label: "Leak 95%", value: "18 L/min" },
+              { label: "Pressure 95%", value: "11.4 cmH₂O" },
+            ]}
+          />
+
+          <div className="grid gap-6 xl:grid-cols-[1fr_22rem]">
+            <div className="space-y-6">
+              <SignalChart title="Flow Rate" points={demoWave(900, 0.06, 0)} color="#38bdf8" />
+              <SignalChart title="Pressure" points={demoWave(600, 0.012, 8)} color="#a78bfa" />
+              <SignalChart title="Leak Rate" points={demoWave(600, 0.02, 6)} color="#fb7185" />
+              <SignalChart title="Minute Ventilation" points={demoWave(500, 0.018, 7)} color="#34d399" />
+              <SignalChart title="Respiratory Rate" points={demoWave(500, 0.03, 14)} color="#fbbf24" />
+              <SignalChart title="Flow Limitation" points={demoWave(500, 0.04, 0.05)} color="#f97316" />
+              <SignalChart title="Snore" points={demoWave(500, 0.05, 0.02)} color="#22d3ee" />
+            </div>
+            <aside className="space-y-6">
+              <section className="rounded-2xl border border-border bg-background/80 p-5">
+                <div className="flex items-center gap-2 text-lg font-semibold"><Activity className="text-primary" /> Compliance</div>
+                <p className="mt-3 text-sm text-muted-foreground">Statistics are cached by source fingerprint and invalidated only when uploaded EDF files change.</p>
+              </section>
+              <EventTimeline durationSeconds={28800} events={[{ id: "1", type: "OA", start_seconds: 3400, duration_seconds: 12 }, { id: "2", type: "H", start_seconds: 12800, duration_seconds: 18 }, { id: "3", type: "RERA", start_seconds: 21800, duration_seconds: 10 }]} />
+            </aside>
+          </div>
 
           <div className="rounded-2xl border border-border bg-background/80 p-6 shadow-2xl">
             <div className="mb-6 flex items-center justify-between">

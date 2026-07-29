@@ -62,3 +62,37 @@ The Vite app proxies `/api/*` requests to the Worker at `http://localhost:8787`.
 docker build -t sleephq-clone .
 docker run --rm -p 5173:5173 -p 8787:8787 sleephq-clone
 ```
+
+## Phase 3: waveform dashboard architecture
+
+Phase 3 adds production-oriented EDF waveform decoding, signal normalization, cached statistics, and SleepHQ-style dashboard primitives.
+
+### Signal decoding
+
+`@sleephq-clone/parser` reads EDF headers and exposes a lazy `EdfSignalReader`. The reader calculates byte offsets per data record, decodes signed 16-bit digital samples, scales them into physical units, and can read a single normalized signal over a bounded record window. This avoids loading unrelated channels and supports files with multi-million sample counts.
+
+ResMed labels are normalized in `packages/parser/src/edf/signal-map.ts` so device-specific names such as `Flow`, `Mask Pressure`, and `Leak` map into stable application names including `FLOW`, `MASK_PRESSURE`, `PRESSURE`, `LEAK`, `RESPIRATORY_RATE`, `MINUTE_VENTILATION`, `TIDAL_VOLUME`, `SNORE`, and `FLOW_LIMITATION`.
+
+### Statistics engine
+
+`@sleephq-clone/statistics` provides reusable calculation functions for AHI, event counts, leak and pressure medians/95th percentiles, usage hours, minute ventilation average, respiratory-rate average, snore index, flow-limitation index, and mask on/off counts. Event marker parsing recognizes `OA`, `CA`, `H`, `RERA`, `FL`, `CSR`, and `LL` markers.
+
+### Dashboard API
+
+The API exposes:
+
+- `GET /api/dashboard` for recent nights.
+- `GET /api/dashboard/:session` for session metadata plus cached statistics.
+- `GET /api/signals/:session` for windowed signal-cache metadata with `signal`, `start`, `end`, and `maxPoints` query parameters.
+- `GET /api/events/:session` for ordered event markers.
+- `GET /api/statistics/:session` for cached statistics.
+
+Responses are JSON and are suitable for Cloudflare compression at the edge.
+
+### Performance strategy
+
+Decoded signal windows are stored in `signal_cache` and keyed by source upload metadata so the application does not decode EDF data repeatedly. Statistics are cached in `statistics` with a source fingerprint and should only be invalidated when underlying uploaded files change. Chart data uses min/max downsampling and explicit time windows to keep rendering stable for sessions longer than 12 hours.
+
+### Dashboard UI
+
+The React dashboard now includes summary cards, compliance context, an event timeline, and reusable SVG charts for flow, pressure, leak, minute ventilation, respiratory rate, flow limitation, and snore. The chart components include resettable zoom interactions and are structured for synchronized cursor, brush, pan, and tooltip enhancements as API-backed samples are connected.
